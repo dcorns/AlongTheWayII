@@ -37,3 +37,7 @@ places_gen.js - Returns Places details of search hits along the path, using the 
   - createMarker(reference) - takes a reference parameter, generates a marker and click handler for 
     for a place, will generate directions from original input point and append to DOM.
 
+    Ver2 started on Dales repository
+    Changes made to index.html and gpview.js. More changes needed.
+    Now when a route is requested, the Leaflet map is opened in a new window and populated with clustered markers. Mouse over expanded markers to see names of the places. Mouse over clusters to see the area they cover.
+
