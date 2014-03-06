@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Along The Way</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="view/style/jquery.nouislider.css">
+    <link rel="stylesheet" type="text/css" href="/css/style.css" />
+
+    <script type="text/javascript"
+      src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyCMQbQ105pUv1RXOaUMFszXyJBEsyRcvGE&sensor=true">
+    </script>
+    <script type="text/javascript"
+      src="http://google-maps-utility-library-v3.googlecode.com/svn/trunk/routeboxer/src/RouteBoxer.js">
+    </script>
+    <script src="js/underscore/underscore-1.60.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+    <script src="js/jquery/jquery-1.11.0.js"></script>
+    <script src='js/jquery/jquery.nouislider.js'></script>
+    <script src='view/src/gpview.js'></script>
+    <script src="model/src/googlemaps.js"></script>
+    <script src="model/src/pathgen.js"></script>
+    <script src="model/src/places_gen.js"></script>
+    <script src="controller/src/query.js"></script>
+    <script src="controller/src/controller.js"></script>
+
+  </head>
+  <body>
+
+<!-- //LEAVE THIS HERE FOR EASY DEBUG -->
+<!-- <input id="fromInput" class="controls" type="text" value="7901 196th street lynnwood wa">
+<input id="toInput" class="controls" type="text" value="8000 196th street lynnwood wa"></br>
+<input type='number' id='milesFromHwy' name='milesFromHwy' value = ".5">
+
+ -->
+    <div id='shutter'>
+      <div id="fromType-selector" class="controls">
+        <label>From: </label>
+        <input type="radio" name="fromType" id="fromChangetype-all" checked="checked">
+        <label for="fromChangetype-all">All</label>
+
+        <input type="radio" name="fromType" id="fromChangetype-establishment">
+        <label for="fromChangetype-establishment">Establishments</label>
+
+        <input type="radio" name="fromType" id="fromChangetype-geocode">
+        <label for="fromChangetype-geocode">Geocodes</label>
+      </div>
+      <input id="fromInput" class="controls" type="text" placeholder="Enter start point">
+      <div id="toType-selector" class="controls">
+        <label>To: </label>
+        <input type="radio" name="toType" id="toChangetype-all" checked="checked">
+        <label for="toChangetype-all">All</label>
+
+        <input type="radio" name="toType" id="toChangetype-establishment">
+        <label for="toChangetype-establishment">Establishments</label>
+
+        <input type="radio" name="toType" id="toChangetype-geocode">
+        <label for="toChangetype-geocode">Geocodes</label>
+      </div>
+      <input id="toInput" class="controls" type="text" placeholder="Enter end point"></br>
+      <label for='milesFromHwy'>Miles From Hwy</label></br>
+      <input type='number' id='milesFromHwy' name'milesFromHwy'>
+
+      <button id='btnGetRoute'>Get Route</button>
+      <br>
+      <div id='placesStuff'>
+        <label>Draw Boxes</label>
+        <input type='checkbox' name='toPlaces' id='placesDrawBoxes'>
+        <button id='btnGetPlaces'>Get Places</button>
+        <br>
+      </div>
+    </div>
+    <div class='controls' id='shutterToggle' style='background-color:red;'>
+      <br>
+    </div>
+    <div id="map"></div>
+    <div id='results'
+      <!--  <div>
+<!--
+<div id='rangeSlider' class='noUiSlider'></div>
+<input id='rangeUpper'></input><input id='rangeLower'></input>
+<div id='milesSlider' class='noUiSlider'></div>
+<input id='milesFromHwy'></input>
+        </div>
+        -->
+  <script id="places-template" type="text/x-handlebars-template">
+      <ul>
+        <br>            
+        <li>{{place}}</li>
+        <li>{{address}}</li>
+        <li>{{phoneNum}}</li>
+        <li>{{price_level}}</li>
+        <li>{{rating}}</li>
+        <li>{{url}}</li>
+        <li>{{website}}</li>
+      </ul>
+    </script>
+  <div class="places"></div>
+
+  </body>
+</html>
