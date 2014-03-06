@@ -41,3 +41,13 @@ places_gen.js - Returns Places details of search hits along the path, using the 
     Changes made to index.html and gpview.js. More changes needed.
     Now when a route is requested, the Leaflet map is opened in a new window and populated with clustered markers. Mouse over expanded markers to see names of the places. Mouse over clusters to see the area they cover.
 
+    Important varialbles used for Leaflet.0.7.2/index.html
+
+    var dataIn = window.opener; (this represents window object from the first index page)
+
+    var rtArray = dataIn.controller.routeObject.routes[0].overview_path; (this is the latlng array ([0].d,[0].e))
+
+    var PlaceArray=dataIn.places; (This is the array of all the Places data)
+
+    FYI if you ever need to know the properties of an object you can use Object.keys(obj) to drill it down.
+
