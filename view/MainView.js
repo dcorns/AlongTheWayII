@@ -12,3 +12,4 @@ var fromViewType = new FromViewType({model: fromType});
 
 var ViewCollection = Backbone.View.extend({});
 //var fromViewCollection = new ViewCollection({collection:fromModelCollection});
+
