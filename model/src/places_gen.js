@@ -1,31 +1,43 @@
 window.places_gen = (function() {
+  'use strict';
+  /*global google*/
+  /*global $*/
+  /*global Handlebars*/
+  /*global _*/
+  /*global alert*/
 
-  var public = {};
-  public.html_out =[];
-  public.place_results = [];
-  public.boxpolys = null;
-  public.gmarkers = [];
-  public.infowindow = new google.maps.InfoWindow();
-  failed_Indexes =[];
-  failed_pl_Queries =[];
+  var _public = {};
+  _public.html_out =[];
+  _public.place_results = [];
+  _public.boxpolys = null;
+  _public.gmarkers = [];
+  _public.infowindow = new google.maps.InfoWindow();
+  var failed_Indexes =[];
+  var failed_pl_Queries =[];
+  var asyncToggle = true;
 
   function timeDelay(value){
     var dfd = $.Deferred();
     setTimeout(function(value) {
-      // console.log("delay");
       dfd.resolve();
     }, value);
     return dfd.promise();
   }
 
-  public.initialize = function initialize() {
+  $(document).on('stopASYNC', function() {
+    //stop all further async callbacks
+    asyncToggle = false;
+  });
+
+  _public.initialize = function initialize() {
   };
 
-  public.getPlaces = function(latLngArray, queryObject){
+  _public.getPlaces = function(latLngArray, queryObject){
     var width = queryObject.width;
     var query = queryObject.query;
     var displayCallback = queryObject.drawPlaces;
 
+    window.nukeMarkers();
     var routeBoxer = window.googleMaps.routeBoxer;
     var boxes = routeBoxer.box(latLngArray, width);
     console.log('boxes: ', boxes);
@@ -33,44 +45,68 @@ window.places_gen = (function() {
     if(queryObject.drawBoxes){
       queryObject.drawBoxes(boxes);
     }
-    //public.drawBoxes(boxes);
+    //_public.drawBoxes(boxes);
     $.search(queryObject, boxes,1000).then(function(results) {
-      // public.showPlaces(500);
+      // _public.showPlaces(500);
       var resultsQuery = queryObject.getLength();
-      console.log(resultsQuery.places, "places.length: ", resultsQuery.places_length);
+      console.log(resultsQuery.places, 'places.length: ', resultsQuery.places_length);
     });
-    public.showPlaces(queryObject);
+    //_public.showPlaces(queryObject);
   };
 
-  public.showPlaces = function showPlaces(queryObject, decrement) {
+  // _public.getPlaces2 = function(latLngArray, queryObject, callback){
+  //   var width = queryObject.width;
+  //   var query = queryObject.query;
+  //   var displayCallback = queryObject.drawPlaces;
+  //   queryObject.nukeMarkers();
+
+  //   //reset async mode
+  //   asyncToggle = true;
+  //   var routeBoxer = window.googleMaps.routeBoxer;
+  //   var boxes = routeBoxer.box(latLngArray, width);
+  //   console.log('boxes: ', boxes);
+  //   //this is calling the drawBoxes function passed from the view
+  //   if(queryObject.drawBoxes){
+  //     queryObject.drawBoxes(boxes);
+  //   }
+  //   //_public.drawBoxes(boxes);
+  //   doSearch(queryObject, boxes, 500, 0, callback);
+  // };
+
+  _public.showPlaces = function showPlaces(queryObject, decrement) {
     var html_out =[];
     var index=0;
     var timer_VAL1;
     var service = window.googleMaps.placesService;
-    console.log("place results length", public.place_results.length);
+    console.log('place results length', _public.place_results.length);
 
     function getDetails(place_) {
       var dfd = $.Deferred();
       service.getDetails({reference:place_}, function(place, status){
         if (status != google.maps.places.PlacesServiceStatus.OK) {
-          failed_pl_Queries.push({id:index, reference:public.place_results[index]});
+          failed_pl_Queries.push({id:index, reference:_public.place_results[index]});
           console.log(failed_pl_Queries);
-          dfd.reject("failed!!!", place_);
+          dfd.reject('failed!!!', place_);
         }
         else {
-          console.log("getDetails: ", status, "index: ", index);
+          console.log('getDetails: ', status, 'index: ', index);
           dfd.resolve(place);
-          };
+          }
         });
       return dfd.promise();
     }
 
-    function startQuery(timerVal) {      
+    function startQuery(timerVal) {
+      //unfortunately this has to be removed - the query limit is too much
+      // if (timerVal>=2000){
+      //   timerVal-=500;
+      //   console.log(timerVal);
+      // }
       var queryLimit = setInterval(function() {
         var dfd = $.Deferred();
-        if (index>=public.place_results.length-1) return;
+        if (index>=_public.place_results.length-1) return;
         index++;
-          getDetails(public.place_results[index]).then(function(result) {
+          getDetails(_public.place_results[index]).then(function(result) {
             $(document).on('stop', function() {
               clearInterval(queryLimit);
               return;
@@ -88,13 +124,13 @@ window.places_gen = (function() {
             if (index <= 2000){
                 queryObject.getDetails(index, result);
                 var source = $('#places-template').html();
-                var template = Handlebars.compile(source)
+                var template = Handlebars.compile(source);
                 var html = template(details);
                 queryObject.getDetailsHTML(index, html);
             }
-            public.html_out.push(details);
+            _public.html_out.push(details);
           },function(error, place){
-            console.log("Way too fast!",place);
+            console.log('Way too fast!',place);
             clearInterval(queryLimit);
             startQuery(timerVal+=500);
             timer_VAL1 = timerVal;
@@ -112,95 +148,116 @@ window.places_gen = (function() {
 
   };
 
-  $.search = function (queryObject, boxes, timerVal) {
-      var toggle = false;
-      $(document).on('stopASYNC', function() {
-        toggle = true;
-      });
-      function findNextPlaces(place_results, searchIndex) {
-          if (toggle) return;
-          var dfd = $.Deferred();
-          var service = window.googleMaps.placesService;
-          if (searchIndex < boxes.length) {
-              // service.nearbySearch({
-              service.radarSearch({
-                  bounds: boxes[searchIndex],
-                  // types: ["food"]
-                  keyword: [queryObject.query],
-                  // rankBy: google.maps.places.RankBy.DISTANCE
-              }, function (results, status) {
-                  if (status != google.maps.places.PlacesServiceStatus.OK  && status === 'OVER_QUERY_LIMIT') {
-                      timerVal+=3000;
-                      console.log("searchIndex: ", searchIndex);
-                      if (_.contains(failed_Indexes, searchIndex) === false){
-                        failed_Indexes.push(searchIndex);
-                        console.log(failed_Indexes);
-                        console.log("failed!: boxes:",searchIndex, failed_Indexes);
-                        timeDelay(timerVal).then(function() {
-                          //will need to change the keyword to match above but haven't had time to check scoping
-                          service.radarSearch({bounds: boxes[searchIndex], keyword: ['thai']}, function(results1, status){
-                            console.log("finished: ", searchIndex, results1, "results.length= ", results1.length);
-                            for (var i = 0, result; result = results[i]; i++) {
-                                public.place_results.push(result.reference); // marker?
-                            }                    
-                            queryObject.drawMarkers(results1);
-                          });
-                        });
-                      }
-                  }
-                  if (status != 'OVER_QUERY_LIMIT'){
-                    console.log(status);
-                    console.log( "bounds["+searchIndex+"] returns "+results.length+" results" );
-                    for (var i = 0, result; result = results[i]; i++) {
-                        public.place_results.push(result.reference); // marker?
-                    }                    
-                    queryObject.drawMarkers(results)
-                  }
-                  dfd.resolve(public.place_results, searchIndex+1);
-              });
-                return timeDelay(timerVal).then(function() {
-                        return dfd.then(findNextPlaces);
-                      });
-            }
-          else {
-            return dfd.resolve(public.place_results).promise();
-          }
-      }
-    return findNextPlaces(public.place_results, 0);
-  }
+  // function doSearch(queryObject, boxes, delayVal, index, callback){
+  //   var service = window.googleMaps.placesService;
+  //   if(index < boxes.length){
+  //     var radarOptions = {
+  //       bounds: boxes[index],
+  //       keyword: [queryObject.query]
+  //     };
+  //     service.radarSearch(radarOptions, boxQuery.bind(null, queryObject, boxes, delayVal, index, callback));
+  //     //call next box search with appropriate delay
+  //     if(asyncToggle){
+  //       setTimeout(doSearch, delayVal, queryObject, boxes, delayVal, index + 1, callback);
+  //     }
+  //   }
+  // }
 
-  public.generateDirections = function generateDirections (place) {
+  // function boxQuery(queryObject, boxes, delayVal, index, callback, results, status){
+  //   console.log('search box ' + (index + 1) + ' out of ' + boxes.length);
+  //   if (status != google.maps.places.PlacesServiceStatus.OK && status === 'OVER_QUERY_LIMIT') {
+  //     setTimeout(doSearch, boxes, delayVal * 3, index, callback);
+  //     console.log('exceeded query limit, will requery box: ' + index);
+  //   }
+  //   if (status != 'OVER_QUERY_LIMIT'){
+  //     console.log('returns '+results.length+' results ');
+  //     for (var i = 0, result; result = results[i]; i++) {
+  //       _public.place_results.push(result.reference);
+  //     }
+  //     queryObject.drawMarkers(results);
+  //   }
+  // }
+
+  $.search = function (queryObject, boxes, timerVal) {
+    var toggle = false;
+    $(document).on('stopASYNC', function() {
+      toggle = true;
+    });
+
+    function findNextPlaces(place_results, searchIndex) {
+      if (toggle) return;
+      var dfd = $.Deferred();
+      var service = window.googleMaps.placesService;
+      var radarOptions;
+
+      if (searchIndex < boxes.length) {
+        radarOptions = {
+          bounds: boxes[searchIndex],
+          keyword: [queryObject.query]
+        };
+
+        service.radarSearch(radarOptions, function (results, status) {
+          if (status != google.maps.places.PlacesServiceStatus.OK && status === 'OVER_QUERY_LIMIT') {
+            timerVal+=3000;
+            console.log('searchIndex: ', searchIndex);
+            if (_.contains(failed_Indexes, searchIndex) === false){
+              failed_Indexes.push(searchIndex);
+              console.log(failed_Indexes);
+              console.log('failed!: boxes:',searchIndex, failed_Indexes);
+              timeDelay(timerVal).then(function() {
+                service.radarSearch({bounds: boxes[searchIndex], keyword: [queryObject.query]}, function(results1, status){
+                  console.log('finished: ', searchIndex, results1, 'results.length= ', results1.length);
+                  for (var i = 0, result; result = results[i]; i++) {
+                    _public.place_results.push(result.reference);
+                  }
+                  queryObject.drawMarkers(results1);
+                });
+              });
+            }
+          }
+          if (status != 'OVER_QUERY_LIMIT'){
+            console.log(status);
+            console.log( 'bounds['+searchIndex+'] returns '+results.length+' results' );
+            for (var i = 0, result; result = results[i]; i++) {
+              _public.place_results.push(result.reference);
+            }
+            queryObject.drawMarkers(results);
+          }
+          dfd.resolve(_public.place_results, searchIndex+1);
+        });
+          return timeDelay(timerVal).then(function() {
+            return dfd.then(findNextPlaces);
+          });
+        }
+      else {
+        return dfd.resolve(_public.place_results).promise();
+      }
+    }
+    return findNextPlaces(_public.place_results, 0);
+  };
+
+  _public.generateDirections = function generateDirections (clickedMarkerDEST) {
     //Attach directions to a particular marker by first defining a route
     //from original destination
-    var clickedMarkerDEST = {
-      origin: $('#fromInput').val(),
-      destination: place.formatted_address,
-      travelMode: google.maps.DirectionsTravelMode.DRIVING
-    }
     window.googleMaps.directionsService.route(clickedMarkerDEST, function(result, status) {
       if (status == google.maps.DirectionsStatus.OK) {
         window.googleMaps.directionsRenderer.setDirections(result);
       }
       else {
-        alert("Directions query failed: " + status);
+        alert('Directions query failed: ' + status);
       }
     });
-  }
+  };
 
-  public.displayDirections = function displayDirections (place) {
+  _public.displayDirections = function displayDirections (clickedMarkerDEST) {
   //Display these directions on the DOM
-    var directionsDISPLAY = {
-      origin: $('#fromInput').val(),
-      destination: place.formatted_address,
-      travelMode:google.maps.TravelMode.DRIVING
-    }
-    window.googleMaps.directionsService.route(directionsDISPLAY, function(response, status) {
+    window.googleMaps.directionsService.route(clickedMarkerDEST, function(response, status) {
         if (status == google.maps.DirectionsStatus.OK) {
           $('#directions-panel').empty();
           window.googleMaps.directionsRenderer.setDirections(response);
         }
       });
-  }
+  };
 
-  return public;
+  return _public;
 })();

@@ -3,29 +3,60 @@
   /*global google*/
   /*global _*/
 
-  NS.distDelta = function(meters){
-
-  };
-
-  NS.timeDelta = function(seconds){
-
-  };
-
   NS.pointToPath = function(latLng, latLngArray){
     return _.min(latLngArray, function(point){
       return google.maps.geometry.spherical.computeDistanceBetween(latLng, point);
     });
   };
 
-  NS.PointToPoint = function(latLng1, latLng2, latLngArray){
-
+  NS.pointToPoint = function(latLng1, latLng2, latLngArray){
+    var startPoint, endPoint;
+    var returnArray = [];
+    startPoint = NS.pointToPath(latLng1, latLngArray);
+    endPoint = NS.pointToPath(latLng2, latLngArray);
+    if(endPoint.pointDist < startPoint.pointDist){
+      //make sure start and end are ordered
+      var tempPoint = endPoint;
+      endPoint = startPoint;
+      startPoint = tempPoint;
+    }
+    _.each(latLngArray, function(elem, index){
+      if(elem.pointDist > startPoint.pointDist && elem.pointDist < endPoint.pointDist){
+        returnArray.push(elem);
+      }
+    });
+    return returnArray;
   };
 
-  NS.PointPlusDelta = function(latLng, deltaData, latLngArray){
-
+  NS.pointPlusDelta = function(latLng, latLngArray, deltaDist, deltaTime){
+    var startPoint, endPoint;
+    var returnArray = [];
+    startPoint = NS.pointToPath(latLng, latLngArray);
+    endPoint = _.find(latLngArray, function(elem){
+      if(deltaDist){
+        return (elem.pointDist - startPoint.pointDist) > deltaDist;
+      }
+      if(deltaTime){
+        return (elem.pointTime - startPoint.pointTime) > deltaTime;
+      }
+      return false;
+    });
+    //if query runs off end of array, set to endpoint
+    if(!endPoint){
+      endPoint = latLngArray[latLngArray.length - 1];
+    }
+    _.each(latLngArray, function(elem){
+      if(!elem){
+        console.log('!');
+      }
+      if(elem.pointDist > startPoint.pointDist && elem.pointDist < endPoint.pointDist){
+        returnArray.push(elem);
+      }
+    });
+    return returnArray;
   };
 
-  NS.PointCenteredDelta = function(latLng, deltaData, latLngArray){
+  NS.pointCenteredDelta = function(latLng, deltaData, latLngArray){
 
   };
 

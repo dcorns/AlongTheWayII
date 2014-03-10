@@ -14,6 +14,8 @@
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
     <script src='leaflet.markercluster.js'></script>
 	<script>
+    'use strict';
+    /*global L*/
 	var map = L.map('map').setView([51.505, -0.09], 13);
 	L.tileLayer('http://{s}.tile.cloudmade.com/3d3d4d0296a14a349b701e70ca1b2587/997/256/{z}/{x}/{y}.png', {
     attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
@@ -56,18 +58,23 @@ function onMapClick(e) {
         .setLatLng(e.latlng)
         .setContent("You clicked the map at " + e.latlng.toString())
         .openOn(map);
-        
+
 }
 
 map.on('click', onMapClick);
 
 //Create Leaflet Icon
-var pinIcon = L.icon('view/images/pin.ico');
-
+var myPin = L.icon({
+    iconUrl: 'images/pin.ico'
+    ,iconSize: [72, 72]
+    ,iconAnchor: [22, 94]
+    ,popupAnchor: [-3, -76]
+    
+});
 
 //Pull google route data and create leaflet polyline
 var dataIn = window.opener;
-var rtArray = dataIn.controller.routeObject.routes[0].overview_path;
+var rtArray = dataIn.controller.routeObject.savePoints;
 
 var ltlg = [];
 var count = 0;
@@ -81,11 +88,11 @@ map.fitBounds(polyline.getBounds());
 map.addLayer(polyline);
 
 //Create Place LatLngs and display markers with clustering
-var PlaceArray=dataIn.places;
+var PlaceArray=dataIn.gmarkers;
 var markers = new L.MarkerClusterGroup();
 count=0;
 while(count < PlaceArray.length){
-    var XX = L.marker([PlaceArray[count].geometry.location.d, PlaceArray[count].geometry.location.e], {title:PlaceArray[count].name}, {riseOnHover:true}, {alt:PlaceArray[count].name}, {icon:pinIcon});//.addTo(map);
+    var XX = L.marker([PlaceArray[count].position.d, PlaceArray[count].position.e], {title: 'Click for More Info', icon:myPin,alt:'Click for More Info'});//.addTo(map);
     //Create Cluster
   //  markers.addLayer(new L.Marker([PlaceArray[count].geometry.location.d, PlaceArray[count].geometry.location.e]));
     markers.addLayer(XX);
@@ -93,7 +100,7 @@ while(count < PlaceArray.length){
     count++;
 }
 
-//Place Clusters 
+//Place Clusters
 map.addLayer(markers);
 
 
